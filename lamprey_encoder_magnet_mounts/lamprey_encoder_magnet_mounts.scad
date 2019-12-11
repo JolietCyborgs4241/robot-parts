@@ -10,7 +10,7 @@ MMtoIN        = 25.4;
 // all dimensions in mm
 
 MagnetOD        = 42.0;
-MagnetID        = 30.5;             // actuallly 31mm but we need a little clearance
+MagnetID        = 30.8;             // actually 31mm but we need a little clearance
 MagnetThickness = 4.5;
 
 MountThickness  = 3;
