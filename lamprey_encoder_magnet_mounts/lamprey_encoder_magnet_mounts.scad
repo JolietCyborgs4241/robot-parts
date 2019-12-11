@@ -1,25 +1,29 @@
+// magnet mount for lamprey encoders
+
 $fn = 200;               // facets per circle
 
 use <MCAD/regular_shapes.scad>
 
-// chamfer is from https://github.com/SebiTimeWaster/Chamfers-for-OpenSCAD
-include <Chamfers-for-OpenSCAD/Chamfer.scad>;
-
-
 MMtoIN        = 25.4;
-
-
-LeftWheel     = 1;              // handle both wheels from one program
-RightWheel    = -1;
-Direction     = RightWheel;      // set direction as appropriate
 
 
 // all dimensions in mm
 
-WheelDiam     = 4.0 * MMtoIN;
-WheelWidth    = 2.0 * MMtoIN;
-WheelChamfer  = 0.00 * MMtoIN;  // unless you really need a chamfer, it's just a little
-                                // flair and not really needed
+MagnetOD        = 42.0;
+MagnetID        = 30.5;             // actuallly 31mm but we need a little clearance
+MagnetThickness = 4.5;
+
+MountThickness  = 3;
+
+HubThickness    = 8;
+HubDiameter     = 0.8 * MMtoIN;     // 
+HubGrubScrew    = .150 * MMtoIN;    // #21 drill is actually .159
+                                    // this leaves a little for final drilling
+
+HUB_TYPE_HEX    = 0;
+HUB_TYPE_ROUND  = 1;
+
+HubType         = HUB_TYPE_HEX;
 
 
 // things get a little itchy when dealing with the hex bore hole
@@ -49,21 +53,10 @@ WheelChamfer  = 0.00 * MMtoIN;  // unless you really need a chamfer, it's just a
 HexBoreInscribedDiam       = 0.5 * MMtoIN;
 HexBoreCircumscribedRadius = HexBoreInscribedDiam * tan(180/6);  //Diam already in MM
 
+// for round bores, we just need the diameter of the bore
 
-// roller-related constants
+HubRoundDiameter           = 0.25 * MMtoIN;
 
-NumOfRollers   = 6;
-
-RollerLength   = 2.0 * MMtoIN;
-RollerDiam     = 1.25 * MMtoIN;   // slightly larger than roller for clearance
-
-// 20% undersized for 1/8" axles so we can drill to the correct size later
-RollerAxleDiam = 1.0 / 8.0 * MMtoIN * 0.80;
-
-RollerAngle    = 45;
-
-RollerOffset   = 0.83;      // how far towards the outside edge the roller center line is
-                            // relative to the radius of the wheel
 
 Extra          = 0.2;       // extra extrusion height to not leave a 0 thickness surface
 
@@ -73,44 +66,43 @@ Extra          = 0.2;       // extra extrusion height to not leave a 0 thickness
 
 difference() {
     
-    // we move to centered on the z axis to make it easier to do the
-    // rollers and the axles
-    
-    translate([0, 0, -WheelWidth / 2]) {
-        chamferCylinder(h=WheelWidth, r=WheelDiam / 2, ch=WheelChamfer);
-    }
-     
-    // punch out the hex bore
-    translate ([0, 0, -WheelWidth / 2 - Extra]) {
-        hexagon_prism(WheelWidth + Extra * 2, HexBoreCircumscribedRadius);
-    }
-    
-    // remove the roller cutouts and the axle holes
-    
-    // rotate for each roller (we don't need to duplicate the first roller with
-    // the last roller so we use 1 degree short of a full rotation as our end
-    for (rotAngle = [0:360/NumOfRollers:359]) {
-        rotate(a=rotAngle, v=[0, 0, 1]) {         // rotate to the roller angle position
-            rotate(a=RollerAngle * Direction, v=[0, 1, 0]) {  // rotate 45 degree around the Y axis
-                // locate the centerline of the roller
-                translate([0, WheelDiam / 2 * RollerOffset, 0]) { 
-
-                    cylinder(h=RollerLength, d=RollerDiam, center=true);
-                    cylinder(h=RollerLength * 2, d=RollerAxleDiam, center=true);
-                }
+    union() {
+        // we just start at 0 z and build layer on layer...
+        cylinder(h=MagnetThickness, d=MagnetID);
+        
+        translate([0, 0, MagnetThickness]) {
+            cylinder(h=MountThickness, d=MagnetOD);
+            translate([0, 0, MountThickness]) {
+                cylinder(h=HubThickness, d=HubDiameter);
             }
         }
+        
+        
     }
-
-    // the torus provides some relief so we can actually insert the outside rollers
-    //
-    // parameters are outside radius and inside radius - actual values were emperically
-    // derived and may need tuning for different wheel sizes, roller sizes, and
-    // roller counts
-    //
-    // the intent is to prevent the roller cutout from being "pinched" near the centerline
-    // of the wheel rim and preventing the insertion of the rollers
+     
+    // punch out the bore
+    translate ([0, 0, -Extra]) {
+        
+        if (HubType == HUB_TYPE_HEX) {
+            // hex bore
+            hexagon_prism(MagnetThickness + MountThickness + HubThickness + Extra * 2,
+                          HexBoreCircumscribedRadius);
+        }
+        
+        if (HubType == HUB_TYPE_ROUND) {
+            // round bore
+            cylinder(h=MagnetThickness + MountThickness + HubThickness + Extra * 2,
+                          d=HexBoreCircumscribedRadius);
+       }       
+    }
     
-    torus(WheelDiam / 2 * 2.5, WheelDiam / 2 * 0.90);
-    
+    // grub screw hole - it just goes in the center of the hub thickness
+    //
+    // first off move the current Z to the middle of the hub thickness,
+    // then rotate 90 on the X, and then punch the hole
+    translate([0, 0, MagnetThickness + MountThickness + HubThickness / 2]) {
+        rotate([90, 0, 0]) {
+            cylinder(h=HubDiameter/2 + Extra, d=HubGrubScrew);
+        }
+    }
 }
