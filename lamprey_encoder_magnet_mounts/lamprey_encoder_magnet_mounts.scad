@@ -51,7 +51,7 @@ HubType         = HUB_TYPE_HEX;
 //      INSCRIBED_DIAMETER * tan(180 / NUM_OF_SIDES)
 
 HexBoreInscribedDiam       = 0.5 * MMtoIN;
-HexBoreCircumscribedRadius = HexBoreInscribedDiam * tan(180/6);  //Diam already in MM
+HexBoreCircumscribedDiam   = HexBoreInscribedDiam * tan(180/6);  //Diam already in MM
 
 // for round bores, we just need the diameter of the bore
 
@@ -86,13 +86,13 @@ difference() {
         if (HubType == HUB_TYPE_HEX) {
             // hex bore
             hexagon_prism(MagnetThickness + MountThickness + HubThickness + Extra * 2,
-                          HexBoreCircumscribedRadius);
+                          HexBoreCircumscribedDiam);
         }
         
         if (HubType == HUB_TYPE_ROUND) {
             // round bore
             cylinder(h=MagnetThickness + MountThickness + HubThickness + Extra * 2,
-                          d=HexBoreCircumscribedRadius);
+                          d=HubRoundDiameter);
        }       
     }
     
